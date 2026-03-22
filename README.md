@@ -23,6 +23,20 @@ A production-ready pet adoption management system for nonprofits. Built with Nex
 - [bcryptjs](https://github.com/dcodeIO/bcrypt.js) for password hashing
 - [jose](https://github.com/panva/jose) for JWT session tokens
 
+## Docker
+
+Run the full stack locally without installing PostgreSQL:
+
+1. Copy envs: `cp .env.example .env` and set a strong `AUTH_SECRET` (32+ chars). Optionally adjust `POSTGRES_*` values.
+2. Build and start: `docker compose up --build`
+3. App is available at [http://localhost:3000](http://localhost:3000)
+
+Notes:
+- PostgreSQL data persists in the `postgres_data` volume. Remove it with `docker compose down -v` if you want a clean database.
+- Prisma migrations run automatically on container startup. Seed data is optional: `docker compose exec web npm run db:seed`.
+- Rebuild after code changes with `docker compose up --build` (or `docker compose build web`).
+- Stop the stack with `docker compose down`.
+
 ## Setup
 
 ### Prerequisites
@@ -45,6 +59,9 @@ Required variables:
 |----------|-------------|
 | `DATABASE_URL` | PostgreSQL connection string |
 | `AUTH_SECRET` | Secret key for JWT signing (min 32 chars) |
+| `POSTGRES_USER` | Database username (used by Docker) |
+| `POSTGRES_PASSWORD` | Database password (used by Docker) |
+| `POSTGRES_DB` | Database name (used by Docker) |
 
 Generate a secure `AUTH_SECRET`:
 
@@ -52,10 +69,10 @@ Generate a secure `AUTH_SECRET`:
 openssl rand -base64 32
 ```
 
-Example `.env`:
+Example `.env` (use host `db` for Docker, `localhost` for a host-installed database):
 
 ```env
-DATABASE_URL="postgresql://postgres:password@localhost:5432/pettrack"
+DATABASE_URL="postgresql://postgres:password@db:5432/pettrack"
 AUTH_SECRET="your-generated-32-char-secret-here"
 ```
 
