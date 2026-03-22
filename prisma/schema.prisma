@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Species {
+  DOG
+  CAT
+  RABBIT
+  BIRD
+  OTHER
+}
+
+enum Sex {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum Size {
+  SMALL
+  MEDIUM
+  LARGE
+  XLARGE
+  UNKNOWN
+}
+
+enum AdoptionStatus {
+  AVAILABLE
+  PENDING
+  ADOPTED
+  HOLD
+  NOT_AVAILABLE
+}
+
+enum LocationType {
+  SHELTER
+  PET_STORE
+  FOSTER
+  OTHER
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(STAFF)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  petsCreated Pet[] @relation("PetCreatedBy")
+  petsUpdated Pet[] @relation("PetUpdatedBy")
+}
+
+model Pet {
+  id             String         @id @default(cuid())
+  name           String
+  species        Species
+  breed          String?
+  sex            Sex            @default(UNKNOWN)
+  ageText        String?
+  size           Size           @default(UNKNOWN)
+  color          String?
+  description    String?
+  adoptionStatus AdoptionStatus @default(AVAILABLE)
+  intakeDate     DateTime?
+  isActive       Boolean        @default(true)
+  locationId     String?
+  createdById    String?
+  updatedById    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  location        Location?            @relation(fields: [locationId], references: [id])
+  createdBy       User?                @relation("PetCreatedBy", fields: [createdById], references: [id])
+  updatedBy       User?                @relation("PetUpdatedBy", fields: [updatedById], references: [id])
+  tags            PetTag[]
+  photos          PetPhoto[]
+  locationHistory PetLocationHistory[]
+
+  @@index([species])
+  @@index([adoptionStatus])
+  @@index([isActive])
+  @@index([locationId])
+  @@index([name])
+}
+
+model Location {
+  id         String       @id @default(cuid())
+  name       String
+  type       LocationType
+  address1   String?
+  address2   String?
+  city       String?
+  state      String?
+  postalCode String?
+  notes      String?
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  pets            Pet[]
+  locationHistory PetLocationHistory[]
+
+  @@index([isActive])
+  @@index([type])
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  category  String?
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pets PetTag[]
+}
+
+model PetTag {
+  petId      String
+  tagId      String
+  assignedAt DateTime @default(now())
+
+  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([petId, tagId])
+  @@index([tagId])
+}
+
+model PetPhoto {
+  id        String   @id @default(cuid())
+  petId     String
+  url       String
+  altText   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([petId])
+}
+
+model PetLocationHistory {
+  id         String    @id @default(cuid())
+  petId      String
+  locationId String
+  startDate  DateTime  @default(now())
+  endDate    DateTime?
+  notes      String?
+
+  pet      Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id])
+
+  @@index([petId])
+}
